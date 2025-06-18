@@ -1,4 +1,5 @@
 import pymongo
+from pymongo.errors import BulkWriteError
 import os
 import re
 import requests
@@ -42,4 +43,15 @@ for id in book_ids:
             }
         )
 
-collection.insert_many(all_hadiths)
+def insert_in_chunks(docs, chunk_size=100):
+    for i in range(0, len(docs), chunk_size):
+        try:
+            collection.insert_many(docs[i:i + chunk_size])
+            print(f"Inserted chunk {i // chunk_size + 1}")
+        except BulkWriteError as bwe:
+            print(f"Bulk write error: {bwe.details}")
+        except Exception as e:
+            print(f"Failed on chunk {i // chunk_size + 1}: {e}")
+
+
+insert_in_chunks(all_hadiths, chunk_size=100)
