@@ -13,7 +13,7 @@ collection = db.all_mpnet
 
 model = SentenceTransformer('all-mpnet-base-v2')
 
-def semantic_search(query, limit):
+def semantic_search(query, limit, books):
     vector = model.encode([query])[0].tolist()
 
     results = collection.aggregate([
@@ -23,13 +23,16 @@ def semantic_search(query, limit):
                 "path": "embedding",
                 "numCandidates": 1000,
                 "limit": limit,
-                "index": "VectorSearch"
+                "index": "VectorSearch",
+                "filter": {"book": { "$in": books }}
             }
         },
         {
             "$project": {
                 "thaqalaynMatn": 1,
                 "book": 1,
+                "URL": 1,
+                "majlisiGrading": 1,
                 "score": { "$meta": "vectorSearchScore" }
             }
         }
@@ -53,7 +56,10 @@ def semantic_search(query, limit):
     response = []
     for doc in results:
         response.append({
-            "score": doc['score'],
-            "book": doc['book'],
             "hadith": doc['thaqalaynMatn'],
+            "similarity_score": doc['score'],
+            "book": doc['book'],
+            "majlisiGrading": doc['majlisiGrading'],
+            "URL": doc['URL']
         })
+    return response
