@@ -13,44 +13,47 @@ collection = db.all_mpnet
 
 model = SentenceTransformer('all-mpnet-base-v2')
 
-query = "the steps of salah prayer"
-vector = model.encode([query])[0].tolist()
+def semantic_search(query, limit):
+    vector = model.encode([query])[0].tolist()
 
-results = collection.aggregate([
-    {
-        "$vectorSearch": {
-            "queryVector": vector,
-            "path": "embedding",
-            "numCandidates": 1000,
-            "limit": 5,
-            "index": "VectorSearch"
-        }
-    },
-    {
-        "$project": {
-            "thaqalaynMatn": 1,
-            "book": 1,
-            "score": { "$meta": "vectorSearchScore" }
-        }
-    }
-])
-
-"""results = collection.aggregate([
-    {
-        "$vectorSearch": {
-            "queryVector": vector,
-            "path": "embedding",
-            "numCandidates": 100,
-            "limit": 5,
-            "index": "VectorSearch",
-            "filter": {
-                "book": {"$eq": "Al-Amālī"}
+    results = collection.aggregate([
+        {
+            "$vectorSearch": {
+                "queryVector": vector,
+                "path": "embedding",
+                "numCandidates": 1000,
+                "limit": limit,
+                "index": "VectorSearch"
+            }
+        },
+        {
+            "$project": {
+                "thaqalaynMatn": 1,
+                "book": 1,
+                "score": { "$meta": "vectorSearchScore" }
             }
         }
-    }
-])"""
+    ])
 
-for doc in results:
-    print(f"Score: {doc['score']:.4f}")
-    print(f"Hadith: {doc['thaqalaynMatn']}")
-    print(f"Book: {doc['book']}\n")
+    """results = collection.aggregate([
+        {
+            "$vectorSearch": {
+                "queryVector": vector,
+                "path": "embedding",
+                "numCandidates": 100,
+                "limit": 5,
+                "index": "VectorSearch",
+                "filter": {
+                    "book": {"$eq": "Al-Amālī"}
+                }
+            }
+        }
+    ])"""
+
+    response = []
+    for doc in results:
+        response.append({
+            "score": doc['score'],
+            "book": doc['book'],
+            "hadith": doc['thaqalaynMatn'],
+        })
