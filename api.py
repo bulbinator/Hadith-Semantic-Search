@@ -20,5 +20,3 @@ async def search(query: str = Query(..., description="Enter your search query"),
     response = semantic_search(query, limit, books)
     print(response)
     return JSONResponse(content=response)
-
-# Run with: uvicorn api:app --reload
